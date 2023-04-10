@@ -22,12 +22,8 @@
 
 #include <mysql/mysql.h>
 #include "SqlConnectionPool.h"
-
-struct Message{
-	uint32_t source;
-	uint32_t dest;
-	char info[128];
-};
+#include "read_write.h"
+#include "message_struct.h"
 
 class server{
 	public:

@@ -22,5 +22,5 @@ main:$(obj)
 
 .PHONY:clean 
 clean:
-	rm  ../*.o ../*.d.*
+	rm  ../*.o ../*.d*
 

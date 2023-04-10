@@ -10,6 +10,11 @@ server::server(int port,std::string ip,int thread_num,int task_num,int pool_size
 								    connectionpool(sqlconnectionpool(pool_size)){
 	listenfd_ = socket(AF_INET,SOCK_STREAM,0);
 
+	int on=1;
+	if(setsockopt(listenfd_,SOL_SOCKET,SO_REUSEADDR,(const void*)&on,sizeof(on))<0){
+		std::cout<<"setsockopt error,"<<strerror(errno)<<std::endl;
+	}
+
 	memset(&servaddr_,0,sizeof(servaddr_));
 	servaddr_.sin_family = AF_INET;
 	servaddr_.sin_port = htons(port);
@@ -36,9 +41,14 @@ void server::Listen(){
 void server::Read(int connfd,int epollfd){
 	Message message;
 	memset(&message,0,sizeof(message));
-	recv(connfd,&message.source,sizeof(message.source),0);
-	recv(connfd,&message.dest,sizeof(message.dest),0);
-	int ret=recv(connfd,message.info,sizeof(message.info),0);
+	//recv(connfd,&message.source,sizeof(message.source),0);
+	//recv(connfd,&message.dest,sizeof(message.dest),0);
+	readn(connfd,(void*)&message.source,sizeof(message.source));
+	readn(connfd,(void*)&message.dest,sizeof(message.dest));
+	uint32_t len =0;
+	readn(connfd,&message.len,sizeof(message.len));
+	len = ntohl(message.len);
+	uint32_t ret=readn(connfd,(void*)message.info,len);
 	if(ret==0){
 		close(connfd);
 		num_online_user--;
@@ -59,7 +69,7 @@ void server::Read(int connfd,int epollfd){
 		std::cout<<"Not find\n";
 		return;
 	}
-	send(toUserport,&message,ret,0);
+	writen(connfd,&message,HEAD_LEN+len);
 }
 
 int server::Removeuser(int connfd){
